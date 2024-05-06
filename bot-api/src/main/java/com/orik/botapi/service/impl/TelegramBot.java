@@ -10,6 +10,7 @@ import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendAudio;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.*;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
@@ -21,6 +22,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 
 @Slf4j
@@ -46,6 +48,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         commands.add(new BotCommand("/help", "get info how to use"));
         commands.add(new BotCommand("/text", "get text response from GPT"));
         commands.add(new BotCommand("/speech", "get speech by your text"));
+        commands.add(new BotCommand("/image", "to generate image by your text"));
         commands.add(new BotCommand("/speech_to_text_mode", "set speech to text mode (\"yes\" | \"no\")"));
         try {
             this.execute(new SetMyCommands(commands, new BotCommandScopeDefault(), null));
@@ -85,7 +88,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                             switch (command) {
                                 case "/start" -> greeting(chatId, userId, firstName, messageId);
                                 case "/help" -> sendMessageInReply(chatId, userId, HELP_TEXT, messageId);
-                                case "/text", "/speech", "/speech_to_text_mode" ->
+                                case "/text", "/speech", "/image", "/speech_to_text_mode" ->
                                         sendMessageInReply(chatId, userId, "Please, enter your prompt after /\"command\"", messageId);
                                 default -> sendMessageInReply(chatId, userId, "Sorry, I can`t answer(", messageId);
 
@@ -99,6 +102,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                                         sendMessageInReply(chatId, userId, chatServive.getTextResponse(List.of(messageText)), messageId);
                                 case "/speech" ->
                                         sendAudioReply(chatId, userId, chatServive.getSpeechByText(messageText), messageId);
+                                case "/image" ->
+                                        sendPhotoReply(chatId, userId, chatServive.getImageByPrompt(messageText), messageId);
                                 case "/speech_to_text_mode" -> {
                                     if (messageText.equals("yes") || messageText.equals("no")) {
                                         setSpeechToTextMode(chatId, messageText);
@@ -212,6 +217,27 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             log.info("Replying to " + userId + " in chat: " + chatId);
             execute(sendAudio);
+        } catch (TelegramApiException e) {
+            log.error("Error occurred: " + e.getMessage());
+        }
+    }
+
+    private void sendPhotoReply(Long chatId, Long userId, String imageBase64, Integer replyToMessageId) {
+        SendPhoto sendPhoto = new SendPhoto();
+        sendPhoto.setChatId(chatId.toString());
+
+        byte[] imageBytes = Base64.getDecoder().decode(imageBase64);
+
+        InputStream inputStream = new ByteArrayInputStream(imageBytes);
+        InputFile inputFile = new InputFile();
+        inputFile.setMedia(inputStream, "photo.png");
+
+        sendPhoto.setPhoto(inputFile);
+        sendPhoto.setReplyToMessageId(replyToMessageId);
+
+        try {
+            log.info("Replying to " + userId + " in chat: " + chatId);
+            execute(sendPhoto);
         } catch (TelegramApiException e) {
             log.error("Error occurred: " + e.getMessage());
         }

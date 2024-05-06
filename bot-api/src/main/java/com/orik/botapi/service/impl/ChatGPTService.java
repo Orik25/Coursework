@@ -5,6 +5,8 @@ import com.theokanning.openai.audio.CreateSpeechRequest;
 import com.theokanning.openai.audio.CreateTranscriptionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
+import com.theokanning.openai.image.CreateImageRequest;
+import com.theokanning.openai.image.Image;
 import com.theokanning.openai.service.OpenAiService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,7 @@ import java.io.InputStream;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -101,4 +104,28 @@ public class ChatGPTService {
         }
         return "Sorry, I can`t generate speech now(\nContact the owners";
     }
+
+    public String getImageByPrompt(String prompt){
+        OpenAiService service = new OpenAiService(config.getToken(), Duration.ofSeconds(30));
+
+        CreateImageRequest imageRequest = CreateImageRequest.builder()
+                .prompt(prompt)
+                .model("dall-e-2")
+                .n(1)
+                .size("512x512")
+                .responseFormat("b64_json")
+                .build();
+
+        try {
+            return service.createImage(imageRequest)
+                    .getData()
+                    .stream()
+                    .map(Image::getB64Json)
+                    .collect(Collectors.joining());
+        } catch (Exception ex) {
+            log.error("Error occurred " + ex.getMessage());
+        }
+        return "Sorry, I can`t generate images now(\nContact the owners";
+    }
+
 }
