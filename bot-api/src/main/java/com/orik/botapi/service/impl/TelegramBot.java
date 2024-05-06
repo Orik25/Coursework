@@ -34,6 +34,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             "Type /start to see a welcome message\n\n" +
             "Type /text {prompt} to get text response from ChatGPT\n\n" +
             "Type /speech {prompt} to get speech from your prompt\n\n" +
+            "Type /speech_to_text_mode {yes|no} to set speech speech to text mode\n\n" +
             "Type /help to see this message again";
 
     @Autowired
@@ -45,6 +46,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         commands.add(new BotCommand("/help", "get info how to use"));
         commands.add(new BotCommand("/text", "get text response from GPT"));
         commands.add(new BotCommand("/speech", "get speech by your text"));
+        commands.add(new BotCommand("/speech_to_text_mode", "set speech to text mode (\"yes\" | \"no\")"));
         try {
             this.execute(new SetMyCommands(commands, new BotCommandScopeDefault(), null));
         } catch (TelegramApiException e) {
@@ -83,7 +85,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                             switch (command) {
                                 case "/start" -> greeting(chatId, userId, firstName, messageId);
                                 case "/help" -> sendMessageInReply(chatId, userId, HELP_TEXT, messageId);
-                                case "/text", "/speech" ->
+                                case "/text", "/speech", "/speech_to_text_mode" ->
                                         sendMessageInReply(chatId, userId, "Please, enter your prompt after /\"command\"", messageId);
                                 default -> sendMessageInReply(chatId, userId, "Sorry, I can`t answer(", messageId);
 
@@ -97,34 +99,70 @@ public class TelegramBot extends TelegramLongPollingBot {
                                         sendMessageInReply(chatId, userId, chatServive.getTextResponse(List.of(messageText)), messageId);
                                 case "/speech" ->
                                         sendAudioReply(chatId, userId, chatServive.getSpeechByText(messageText), messageId);
+                                case "/speech_to_text_mode" -> {
+                                    if (messageText.equals("yes") || messageText.equals("no")) {
+                                        setSpeechToTextMode(chatId, messageText);
+                                    }
+
+                                }
                                 default -> sendMessageInReply(chatId, userId, "Sorry, I can`t answer(", messageId);
                             }
                         }
                     }
 
                 }
-            } else if (update.getMessage().hasVoice()) {
+            } else if (BotConfig.speechText && (update.getMessage().hasVoice() || update.getMessage().hasAudio())) {
                 Message message = update.getMessage();
-                Voice voice = message.getVoice();
                 Long chatId = message.getChatId();
                 Integer messageId = message.getMessageId();
                 Long userId = message.getFrom().getId();
-                String fileId = voice.getFileId();
 
-                GetFile getFile = new GetFile();
-                getFile.setFileId(fileId);
-                File file;
-                try {
-                    file = execute(getFile);
-                    InputStream inputStream = new URL("https://api.telegram.org/file/bot" + getBotToken() + "/" + file.getFilePath()).openStream();
-                    String response = chatServive.getTextBySpeech(inputStream);
-                    sendMessageInReply(chatId, userId, response, messageId);
-                } catch (TelegramApiException | IOException e) {
-                    log.error("Error occurred: " + e.getMessage());
-                    sendMessageInReply(chatId, userId, "Sorry, this service is currently unavailable(\nContact the owners", messageId);
+                if (message.hasVoice()) {
+                    Voice voice = message.getVoice();
+                    handleVoice(chatId, messageId, userId, voice);
+                } else if (message.hasAudio()) {
+                    Audio audio = message.getAudio();
+                    handleAudio(chatId, messageId, userId, audio);
                 }
             }
 
+        }
+    }
+
+    private void handleVoice(Long chatId, Integer messageId, Long userId, Voice voice) {
+        String fileId = voice.getFileId();
+        processAudioFile(chatId, messageId, userId, fileId);
+    }
+
+    private void handleAudio(Long chatId, Integer messageId, Long userId, Audio audio) {
+        String fileId = audio.getFileId();
+        processAudioFile(chatId, messageId, userId, fileId);
+    }
+
+    private void processAudioFile(Long chatId, Integer messageId, Long userId, String fileId) {
+        GetFile getFile = new GetFile();
+        getFile.setFileId(fileId);
+        File file;
+        try {
+            file = execute(getFile);
+            InputStream inputStream = new URL("https://api.telegram.org/file/bot" + getBotToken() + "/" + file.getFilePath()).openStream();
+            String response = chatServive.getTextBySpeech(inputStream);
+            sendMessageInReply(chatId, userId, response, messageId);
+        } catch (TelegramApiException | IOException e) {
+            log.error("Error occurred: " + e.getMessage());
+            sendMessageInReply(chatId, userId, "Sorry, this service is currently unavailable(\nContact the owners", messageId);
+        }
+    }
+
+    private void setSpeechToTextMode(Long chatId, String command) {
+        if (command.equals("yes")) {
+            log.info("Speech to text mode is setted: true");
+            sendMessage(chatId, "Speech to text mode is setted: true");
+            BotConfig.speechText = true;
+        } else if (command.equals("no")) {
+            log.info("Speech to text mode is setted: false");
+            sendMessage(chatId, "Speech to text mode is setted: false");
+            BotConfig.speechText = false;
         }
     }
 
@@ -137,7 +175,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage.setChatId(String.valueOf(chatId));
         sendMessage.setText(textToSend);
         try {
-            log.info("Replying to " + chatId);
+            log.info("Replying in chat: " + chatId);
             execute(sendMessage);
         } catch (TelegramApiException e) {
             log.error("Error occurred: " + e.getMessage());
