@@ -1,7 +1,7 @@
 package com.orik.botapi.config;
 
 
-import com.orik.botapi.service.impl.TelegramBot;
+import com.orik.botapi.service.impl.telegram.TelegramBot;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;

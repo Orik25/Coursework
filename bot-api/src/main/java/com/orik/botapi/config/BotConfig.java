@@ -15,6 +15,4 @@ public class BotConfig {
     String botName;
     @Value("${bot.token}")
     String token;
-
-    public static boolean speechText = false;
 }

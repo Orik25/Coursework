@@ -1,7 +1,21 @@
-package com.orik.botapi.service.impl;
+package com.orik.botapi.service.impl.telegram;
 
 
 import com.orik.botapi.config.BotConfig;
+import com.orik.botapi.config.settings.ImageModelSettings;
+import com.orik.botapi.config.settings.SpeechToTextModelSettings;
+import com.orik.botapi.config.settings.TextModelSettings;
+import com.orik.botapi.config.settings.TextToSpeechSettings;
+import com.orik.botapi.constant.image.ImageModel;
+import com.orik.botapi.constant.image.ImageSize;
+import com.orik.botapi.constant.image.ImageStyle;
+import com.orik.botapi.constant.speechtotext.SpeechToTextLanguage;
+import com.orik.botapi.constant.speechtotext.SpeechToTextMode;
+import com.orik.botapi.constant.text.GptModel;
+import com.orik.botapi.constant.texttospeech.TextToSpeechModel;
+import com.orik.botapi.constant.texttospeech.TextToSpeechVoiceType;
+import com.orik.botapi.service.impl.gpt.ChatGPTService;
+import com.orik.botapi.service.impl.telegram.keyboard.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -11,9 +25,11 @@ import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendAudio;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.*;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.ByteArrayInputStream;
@@ -25,31 +41,50 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 
+import static com.orik.botapi.constant.Routing.*;
+
+
 @Slf4j
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
     private final BotConfig botConfig;
     private final ChatGPTService chatServive;
+    private final MainKeyboard mainKeyboard;
+    private final TextModelKeyboard textModelKeyboard;
+    private final ImageModelKeyboard imageModelKeyboard;
+    private final TextToSpeechModelKeyboard textToSpeechModelKeyboard;
+    private final SpeechToTextModelKeyboard speechToTextModelKeyboard;
     private static final String HELP_TEXT = "This bot is created to communicate with Chat GPT from Telegram\n\n" +
             "You can execute commands from the main menu on the left or by typing a command:\n\n" +
             "Type /start to see a welcome message\n\n" +
             "Type /start to see a welcome message\n\n" +
             "Type /text {prompt} to get text response from ChatGPT\n\n" +
             "Type /speech {prompt} to get speech from your prompt\n\n" +
-            "Type /speech_to_text_mode {yes|no} to set speech speech to text mode\n\n" +
+            "Type /settings to set detailed configuration of models\n\n" +
             "Type /help to see this message again";
 
     @Autowired
-    public TelegramBot(BotConfig botConfig, ChatGPTService chatServive) {
+    public TelegramBot(BotConfig botConfig,
+                       ChatGPTService chatServive,
+                       MainKeyboard mainKeyboard,
+                       TextModelKeyboard textModelKeyboard,
+                       ImageModelKeyboard imageModelKeyboard,
+                       SpeechToTextModelKeyboard speechToTextModelKeyboard,
+                       TextToSpeechModelKeyboard textToSpeechModelKeyboard) {
         this.botConfig = botConfig;
         this.chatServive = chatServive;
+        this.mainKeyboard = mainKeyboard;
+        this.textModelKeyboard = textModelKeyboard;
+        this.imageModelKeyboard = imageModelKeyboard;
+        this.textToSpeechModelKeyboard = textToSpeechModelKeyboard;
+        this.speechToTextModelKeyboard = speechToTextModelKeyboard;
         List<BotCommand> commands = new ArrayList<>();
         commands.add(new BotCommand("/start", "get greeting message"));
         commands.add(new BotCommand("/help", "get info how to use"));
         commands.add(new BotCommand("/text", "get text response from GPT"));
         commands.add(new BotCommand("/speech", "get speech by your text"));
         commands.add(new BotCommand("/image", "to generate image by your text"));
-        commands.add(new BotCommand("/speech_to_text_mode", "set speech to text mode (\"yes\" | \"no\")"));
+        commands.add(new BotCommand("/settings", "detailed configuration of models"));
         try {
             this.execute(new SetMyCommands(commands, new BotCommandScopeDefault(), null));
         } catch (TelegramApiException e) {
@@ -88,7 +123,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                             switch (command) {
                                 case "/start" -> greeting(chatId, userId, firstName, messageId);
                                 case "/help" -> sendMessageInReply(chatId, userId, HELP_TEXT, messageId);
-                                case "/text", "/speech", "/image", "/speech_to_text_mode" ->
+                                case "/settings" -> sendSettingsMenu(chatId);
+                                case "/text", "/speech", "/image" ->
                                         sendMessageInReply(chatId, userId, "Please, enter your prompt after /\"command\"", messageId);
                                 default -> sendMessageInReply(chatId, userId, "Sorry, I can`t answer(", messageId);
 
@@ -98,25 +134,20 @@ public class TelegramBot extends TelegramLongPollingBot {
                             switch (command) {
                                 case "/start" -> greeting(chatId, userId, firstName, messageId);
                                 case "/help" -> sendMessageInReply(chatId, userId, HELP_TEXT, messageId);
+                                case "/settings" -> sendSettingsMenu(chatId);
                                 case "/text" ->
                                         sendMessageInReply(chatId, userId, chatServive.getTextResponse(List.of(messageText)), messageId);
                                 case "/speech" ->
                                         sendAudioReply(chatId, userId, chatServive.getSpeechByText(messageText), messageId);
                                 case "/image" ->
                                         sendPhotoReply(chatId, userId, chatServive.getImageByPrompt(messageText), messageId);
-                                case "/speech_to_text_mode" -> {
-                                    if (messageText.equals("yes") || messageText.equals("no")) {
-                                        setSpeechToTextMode(chatId, messageText);
-                                    }
-
-                                }
                                 default -> sendMessageInReply(chatId, userId, "Sorry, I can`t answer(", messageId);
                             }
                         }
                     }
 
                 }
-            } else if (BotConfig.speechText && (update.getMessage().hasVoice() || update.getMessage().hasAudio())) {
+            } else if (SpeechToTextModelSettings.speechToTextMode.equals(SpeechToTextMode.ENABLED) && (update.getMessage().hasVoice() || update.getMessage().hasAudio())) {
                 Message message = update.getMessage();
                 Long chatId = message.getChatId();
                 Integer messageId = message.getMessageId();
@@ -129,6 +160,59 @@ public class TelegramBot extends TelegramLongPollingBot {
                     Audio audio = message.getAudio();
                     handleAudio(chatId, messageId, userId, audio);
                 }
+            }
+
+        } else if (update.hasCallbackQuery()) {
+            CallbackQuery callbackQuery = update.getCallbackQuery();
+            String data = callbackQuery.getData();
+            Long chatId = callbackQuery.getMessage().getChatId();
+            Integer messageId = callbackQuery.getMessage().getMessageId();
+
+            if (data.equals(T0_TEXT_MODEL.getValue())) {
+                editMessageKeyboard(chatId, messageId, textModelKeyboard.getInlineKeyboard());
+            } else if (data.equals(T0_IMAGE_MODEL.getValue())) {
+                editMessageKeyboard(chatId, messageId, imageModelKeyboard.getInlineKeyboard());
+            } else if (data.equals(T0_TEXT_TO_SPEECH_MODEL.getValue())) {
+                editMessageKeyboard(chatId, messageId, textToSpeechModelKeyboard.getInlineKeyboard());
+            } else if (data.equals(T0_SPEECH_TO_TEXT_MODEL.getValue())) {
+                editMessageKeyboard(chatId, messageId, speechToTextModelKeyboard.getInlineKeyboard());
+            } else if (data.equals(TO_MAIN.getValue())) {
+                editMessageKeyboard(chatId, messageId, mainKeyboard.getInlineKeyboard());
+            } else if (GptModel.isOneOf(data)) {
+                TextModelSettings.gptModel = GptModel.fromValue(data);
+                textModelKeyboard.updateInlineKeyboard();
+                editMessageKeyboard(chatId, messageId, textModelKeyboard.getInlineKeyboard());
+            } else if (ImageModel.isOneOf(data)) {
+                ImageModelSettings.imageModel = ImageModel.fromValue(data);
+                imageModelKeyboard.updateInlineKeyboard();
+                editMessageKeyboard(chatId, messageId, imageModelKeyboard.getInlineKeyboard());
+            } else if (ImageSize.isOneOf(data)) {
+                ImageModelSettings.imageSize = ImageSize.fromValue(data);
+                imageModelKeyboard.updateInlineKeyboard();
+                editMessageKeyboard(chatId, messageId, imageModelKeyboard.getInlineKeyboard());
+            } else if (ImageStyle.isOneOf(data)) {
+                ImageModelSettings.imageStyle = ImageStyle.fromValue(data);
+                imageModelKeyboard.updateInlineKeyboard();
+                editMessageKeyboard(chatId, messageId, imageModelKeyboard.getInlineKeyboard());
+            } else if (TextToSpeechModel.isOneOf(data)) {
+                TextToSpeechSettings.textToSpeechModel = TextToSpeechModel.fromValue(data);
+                textToSpeechModelKeyboard.updateInlineKeyboard();
+                editMessageKeyboard(chatId, messageId, textToSpeechModelKeyboard.getInlineKeyboard());
+            } else if (TextToSpeechVoiceType.isOneOf(data)) {
+                TextToSpeechSettings.textToSpeechVoiceType = TextToSpeechVoiceType.fromValue(data);
+                textToSpeechModelKeyboard.updateInlineKeyboard();
+                editMessageKeyboard(chatId, messageId, textToSpeechModelKeyboard.getInlineKeyboard());
+            } else if (SpeechToTextMode.isOneOf(data)) {
+                SpeechToTextModelSettings.speechToTextMode = SpeechToTextMode.fromValue(data);
+                speechToTextModelKeyboard.updateInlineKeyboard();
+                editMessageKeyboard(chatId, messageId, speechToTextModelKeyboard.getInlineKeyboard());
+            } else if (SpeechToTextLanguage.isOneOf(data)) {
+                SpeechToTextModelSettings.speechToTextLanguage = SpeechToTextLanguage.fromValue(data);
+                speechToTextModelKeyboard.updateInlineKeyboard();
+                editMessageKeyboard(chatId, messageId, speechToTextModelKeyboard.getInlineKeyboard());
+
+            } else {
+                System.out.println(data);
             }
 
         }
@@ -159,20 +243,21 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void setSpeechToTextMode(Long chatId, String command) {
-        if (command.equals("yes")) {
-            log.info("Speech to text mode is setted: true");
-            sendMessage(chatId, "Speech to text mode is setted: true");
-            BotConfig.speechText = true;
-        } else if (command.equals("no")) {
-            log.info("Speech to text mode is setted: false");
-            sendMessage(chatId, "Speech to text mode is setted: false");
-            BotConfig.speechText = false;
-        }
-    }
-
     private void greeting(Long chatId, Long userId, String name, Integer replyToMessageId) {
         sendMessageInReply(chatId, userId, "Hi, " + name + ", nice to meet you", replyToMessageId);
+    }
+
+    private void sendSettingsMenu(Long chatId){
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(String.valueOf(chatId));
+        sendMessage.setText("Here is");
+        sendMessage.setReplyMarkup(mainKeyboard.getInlineKeyboard());
+        try {
+            log.info("Sending keyboard to in chat: " + chatId);
+            execute(sendMessage);
+        } catch (TelegramApiException e) {
+            log.error("Error occurred: " + e.getMessage());
+        }
     }
 
     private void sendMessage(Long chatId, String textToSend) {
@@ -243,4 +328,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void editMessageKeyboard(Long chatId, Integer messageId, InlineKeyboardMarkup keyboard) {
+        EditMessageReplyMarkup editMessage = new EditMessageReplyMarkup();
+        editMessage.setChatId(String.valueOf(chatId));
+        editMessage.setMessageId(messageId);
+        editMessage.setReplyMarkup(keyboard);
+
+        try {
+            log.info("Changing keyboard to in chat: " + chatId);
+            execute(editMessage);
+        } catch (TelegramApiException e) {
+            log.error("Error occurred: " + e.getMessage());
+        }
+    }
 }

@@ -1,6 +1,10 @@
-package com.orik.botapi.service.impl;
+package com.orik.botapi.service.impl.gpt;
 
 import com.orik.botapi.config.ChatGPTConfig;
+import com.orik.botapi.config.settings.ImageModelSettings;
+import com.orik.botapi.config.settings.SpeechToTextModelSettings;
+import com.orik.botapi.config.settings.TextModelSettings;
+import com.orik.botapi.config.settings.TextToSpeechSettings;
 import com.theokanning.openai.audio.CreateSpeechRequest;
 import com.theokanning.openai.audio.CreateTranscriptionRequest;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
@@ -39,7 +43,7 @@ public class ChatGPTService {
         OpenAiService service = new OpenAiService(config.getToken(), Duration.ofSeconds(30));
         ChatCompletionRequest completionRequest = ChatCompletionRequest.builder()
                 .messages(prompt)
-                .model("gpt-3.5-turbo")
+                .model(TextModelSettings.gptModel.getValue())
                 .build();
 
         try {
@@ -61,9 +65,9 @@ public class ChatGPTService {
         OpenAiService service = new OpenAiService(config.getToken(), Duration.ofSeconds(30));
 
         CreateSpeechRequest speechRequest = CreateSpeechRequest.builder()
-                .model("tts-1")
+                .model(TextToSpeechSettings.textToSpeechModel.getValue())
                 .input(prompt)
-                .voice("alloy")
+                .voice(TextToSpeechSettings.textToSpeechVoiceType.getValue())
                 .responseFormat("mp3")
                 .speed(0.9)
                 .build();
@@ -81,7 +85,7 @@ public class ChatGPTService {
         OpenAiService service = new OpenAiService(config.getToken(), Duration.ofSeconds(30));
 
         CreateTranscriptionRequest speechRequest = CreateTranscriptionRequest.builder()
-                .language("en")
+                .language(SpeechToTextModelSettings.speechToTextLanguage.getValue())
                 .model("whisper-1")
                 .responseFormat("json")
                 .build();
@@ -110,9 +114,10 @@ public class ChatGPTService {
 
         CreateImageRequest imageRequest = CreateImageRequest.builder()
                 .prompt(prompt)
-                .model("dall-e-2")
+                .model(ImageModelSettings.imageModel.getValue())
                 .n(1)
-                .size("512x512")
+                .size(ImageModelSettings.imageSize.getValue())
+                .style(ImageModelSettings.imageStyle.getValue())
                 .responseFormat("b64_json")
                 .build();
 
