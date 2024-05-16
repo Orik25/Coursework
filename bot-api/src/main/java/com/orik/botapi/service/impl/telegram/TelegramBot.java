@@ -50,7 +50,7 @@ import static com.orik.botapi.constant.Routing.*;
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
     private final BotConfig botConfig;
-    private final ChatGPTService chatServive;
+    private final ChatGPTService chatService;
     private final ChatRepository chatRepository;
     private final MainKeyboard mainKeyboard;
     private final TextModelKeyboard textModelKeyboard;
@@ -68,7 +68,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Autowired
     public TelegramBot(BotConfig botConfig,
-                       ChatGPTService chatServive,
+                       ChatGPTService chatService,
                        MainKeyboard mainKeyboard,
                        ChatRepository chatRepository,
                        TextModelKeyboard textModelKeyboard,
@@ -76,7 +76,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                        SpeechToTextModelKeyboard speechToTextModelKeyboard,
                        TextToSpeechModelKeyboard textToSpeechModelKeyboard) {
         this.botConfig = botConfig;
-        this.chatServive = chatServive;
+        this.chatService = chatService;
         this.mainKeyboard = mainKeyboard;
         this.chatRepository = chatRepository;
         this.textModelKeyboard = textModelKeyboard;
@@ -141,11 +141,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                                 case "/help" -> sendMessageInReply(chatId, userId, HELP_TEXT, messageId);
                                 case "/settings" -> sendSettingsMenu(chatId);
                                 case "/text" ->
-                                        sendMessageInReply(chatId, userId, chatServive.getTextResponse(List.of(messageText)), messageId);
+                                        sendMessageInReply(chatId, userId, chatService.getTextResponse(List.of(messageText)), messageId);
                                 case "/speech" ->
-                                        sendAudioReply(chatId, userId, chatServive.getSpeechByText(messageText), messageId);
+                                        sendAudioReply(chatId, userId, chatService.getSpeechByText(messageText), messageId);
                                 case "/image" ->
-                                        sendPhotoReply(chatId, userId, chatServive.getImageByPrompt(messageText), messageId);
+                                        sendPhotoReply(chatId, userId, chatService.getImageByPrompt(messageText), messageId);
                                 default -> sendMessageInReply(chatId, userId, "Sorry, I can`t answer(", messageId);
                             }
                         }
@@ -253,7 +253,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             file = execute(getFile);
             InputStream inputStream = new URL("https://api.telegram.org/file/bot" + getBotToken() + "/" + file.getFilePath()).openStream();
-            String response = chatServive.getTextBySpeech(inputStream);
+            String response = chatService.getTextBySpeech(inputStream);
             sendMessageInReply(chatId, userId, response, messageId);
         } catch (TelegramApiException | IOException e) {
             log.error("Error occurred: " + e.getMessage());
