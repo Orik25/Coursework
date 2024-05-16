@@ -14,6 +14,8 @@ import com.orik.botapi.constant.speechtotext.SpeechToTextMode;
 import com.orik.botapi.constant.text.GptModel;
 import com.orik.botapi.constant.texttospeech.TextToSpeechModel;
 import com.orik.botapi.constant.texttospeech.TextToSpeechVoiceType;
+import com.orik.botapi.data.DAO.ChatRepository;
+import com.orik.botapi.data.entity.Chat;
 import com.orik.botapi.service.impl.gpt.ChatGPTService;
 import com.orik.botapi.service.impl.telegram.keyboard.*;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +51,7 @@ import static com.orik.botapi.constant.Routing.*;
 public class TelegramBot extends TelegramLongPollingBot {
     private final BotConfig botConfig;
     private final ChatGPTService chatServive;
+    private final ChatRepository chatRepository;
     private final MainKeyboard mainKeyboard;
     private final TextModelKeyboard textModelKeyboard;
     private final ImageModelKeyboard imageModelKeyboard;
@@ -67,6 +70,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     public TelegramBot(BotConfig botConfig,
                        ChatGPTService chatServive,
                        MainKeyboard mainKeyboard,
+                       ChatRepository chatRepository,
                        TextModelKeyboard textModelKeyboard,
                        ImageModelKeyboard imageModelKeyboard,
                        SpeechToTextModelKeyboard speechToTextModelKeyboard,
@@ -74,6 +78,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         this.botConfig = botConfig;
         this.chatServive = chatServive;
         this.mainKeyboard = mainKeyboard;
+        this.chatRepository = chatRepository;
         this.textModelKeyboard = textModelKeyboard;
         this.imageModelKeyboard = imageModelKeyboard;
         this.textToSpeechModelKeyboard = textToSpeechModelKeyboard;
@@ -257,6 +262,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void greeting(Long chatId, Long userId, String name, Integer replyToMessageId) {
+        chatRepository.save(new Chat(chatId));
         sendMessageInReply(chatId, userId, "Hi, " + name + ", nice to meet you", replyToMessageId);
     }
 

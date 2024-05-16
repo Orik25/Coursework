@@ -1,5 +1,6 @@
 package com.orik.botapi.constant.image;
 
+
 public enum ImageModel {
     DALL_E_2("dall-e-2"),
     DALL_E_3("dall-e-3");
