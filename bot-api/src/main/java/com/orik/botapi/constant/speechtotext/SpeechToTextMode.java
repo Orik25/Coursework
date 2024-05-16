@@ -1,7 +1,5 @@
 package com.orik.botapi.constant.speechtotext;
 
-import com.orik.botapi.constant.text.GptModel;
-
 public enum SpeechToTextMode {
     ENABLED("enabled"),
     DISABLED("disabled");

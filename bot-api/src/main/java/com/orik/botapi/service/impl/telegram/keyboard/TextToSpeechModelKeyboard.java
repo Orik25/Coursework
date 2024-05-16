@@ -1,9 +1,7 @@
 package com.orik.botapi.service.impl.telegram.keyboard;
 
-import com.orik.botapi.config.settings.TextModelSettings;
 import com.orik.botapi.config.settings.TextToSpeechSettings;
 import com.orik.botapi.constant.Routing;
-import com.orik.botapi.constant.text.GptModel;
 import com.orik.botapi.constant.texttospeech.TextToSpeechModel;
 import com.orik.botapi.constant.texttospeech.TextToSpeechVoiceType;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +19,8 @@ public class TextToSpeechModelKeyboard {
     private List<InlineKeyboardButton> voiceTypeButtons1;
     private List<InlineKeyboardButton> voiceTypeButtons2;
     private List<InlineKeyboardButton> voiceTypeDescriptionButtons;
+    private List<InlineKeyboardButton> speedButtons;
+    private List<InlineKeyboardButton>  speedDescriptionButtons;
     private List<InlineKeyboardButton> backButtonList;
     private InlineKeyboardButton tts1;
     private InlineKeyboardButton tts1Hd;
@@ -33,6 +33,10 @@ public class TextToSpeechModelKeyboard {
     private InlineKeyboardButton back;
     private InlineKeyboardButton description;
     private InlineKeyboardButton voiceTypeDescription;
+    private InlineKeyboardButton currentSpeedDescription;
+    private InlineKeyboardButton currentSpeed;
+    private InlineKeyboardButton plus;
+    private InlineKeyboardButton minus;
 
     @Autowired
     public TextToSpeechModelKeyboard(){
@@ -42,6 +46,8 @@ public class TextToSpeechModelKeyboard {
         this.voiceTypeButtons1 = new ArrayList<>();
         this.voiceTypeButtons2 = new ArrayList<>();
         this.voiceTypeDescriptionButtons = new ArrayList<>();
+        this.speedDescriptionButtons = new ArrayList<>();
+        this.speedButtons = new ArrayList<>();
 
         this.tts1 = new InlineKeyboardButton(TextToSpeechModel.TTS_1.name());
         this.tts1.setCallbackData(TextToSpeechModel.TTS_1.getValue());
@@ -61,7 +67,20 @@ public class TextToSpeechModelKeyboard {
         this.shimmer = new InlineKeyboardButton(TextToSpeechVoiceType.SHIMMER.name());
         this.shimmer.setCallbackData(TextToSpeechVoiceType.SHIMMER.getValue());
 
+        this.plus = new InlineKeyboardButton("➕");
+        this.plus.setCallbackData("+");
+        this.currentSpeed = new InlineKeyboardButton(TextToSpeechSettings.speechToTextSpeed.toString());
+        this.currentSpeed.setCallbackData("invalid");
+        this.minus = new InlineKeyboardButton("➖");
+        this.minus.setCallbackData("-");
 
+        this.speedButtons.add(plus);
+        this.speedButtons.add(currentSpeed);
+        this.speedButtons.add(minus);
+
+        this.currentSpeedDescription = new InlineKeyboardButton("Speed of speech");
+        this.currentSpeedDescription.setCallbackData("invalid");
+        this.speedDescriptionButtons.add(currentSpeedDescription);
 
         this.back = new InlineKeyboardButton("◀️Back");
         this.back.setCallbackData(Routing.TO_MAIN.getValue());
@@ -99,6 +118,8 @@ public class TextToSpeechModelKeyboard {
         keyboard.add(voiceTypeDescriptionButtons);
         keyboard.add(voiceTypeButtons1);
         keyboard.add(voiceTypeButtons2);
+        keyboard.add(speedDescriptionButtons);
+        keyboard.add(speedButtons);
         keyboard.add(backButtonList);
 
         keyboardMarkup.setKeyboard(keyboard);
@@ -133,5 +154,6 @@ public class TextToSpeechModelKeyboard {
                 button.setText(TextToSpeechVoiceType.fromValue(button.getCallbackData()).name());
             }
         }
+        currentSpeed.setText(TextToSpeechSettings.speechToTextSpeed.toString());
     }
 }

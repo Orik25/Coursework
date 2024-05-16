@@ -210,6 +210,19 @@ public class TelegramBot extends TelegramLongPollingBot {
                 SpeechToTextModelSettings.speechToTextLanguage = SpeechToTextLanguage.fromValue(data);
                 speechToTextModelKeyboard.updateInlineKeyboard();
                 editMessageKeyboard(chatId, messageId, speechToTextModelKeyboard.getInlineKeyboard());
+            } else if (data.equals("+")) {
+                if (TextToSpeechSettings.speechToTextSpeed <= 3.75) {
+                    TextToSpeechSettings.speechToTextSpeed += 0.25;
+                    textToSpeechModelKeyboard.updateInlineKeyboard();
+                    editMessageKeyboard(chatId, messageId, textToSpeechModelKeyboard.getInlineKeyboard());
+                }
+
+            } else if (data.equals("-")) {
+                if (TextToSpeechSettings.speechToTextSpeed >= 0.50) {
+                    TextToSpeechSettings.speechToTextSpeed -= 0.25;
+                    textToSpeechModelKeyboard.updateInlineKeyboard();
+                    editMessageKeyboard(chatId, messageId, textToSpeechModelKeyboard.getInlineKeyboard());
+                }
 
             } else {
                 System.out.println(data);
@@ -247,7 +260,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessageInReply(chatId, userId, "Hi, " + name + ", nice to meet you", replyToMessageId);
     }
 
-    private void sendSettingsMenu(Long chatId){
+    private void sendSettingsMenu(Long chatId) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(String.valueOf(chatId));
         sendMessage.setText("Here is");

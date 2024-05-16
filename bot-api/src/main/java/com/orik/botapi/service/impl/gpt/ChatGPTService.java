@@ -69,7 +69,7 @@ public class ChatGPTService {
                 .input(prompt)
                 .voice(TextToSpeechSettings.textToSpeechVoiceType.getValue())
                 .responseFormat("mp3")
-                .speed(0.9)
+                .speed(TextToSpeechSettings.speechToTextSpeed)
                 .build();
         try {
             log.info("Generating speech by text...");

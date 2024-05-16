@@ -5,7 +5,6 @@ import com.orik.botapi.constant.Routing;
 import com.orik.botapi.constant.image.ImageModel;
 import com.orik.botapi.constant.image.ImageSize;
 import com.orik.botapi.constant.image.ImageStyle;
-import com.orik.botapi.constant.text.GptModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
