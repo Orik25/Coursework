@@ -3,7 +3,12 @@ package com.orik.userapi.controller.page;
 import com.orik.userapi.DTO.OrderDTO;
 import com.orik.userapi.DTO.RequestConsultationDTO;
 import com.orik.userapi.constant.ServerType;
+import com.orik.userapi.data.DAO.ConsultationRepository;
+import com.orik.userapi.data.DAO.OrderRepository;
+import com.orik.userapi.data.entity.Consultation;
+import com.orik.userapi.data.entity.Order;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -12,7 +17,11 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 
 @Controller
+@AllArgsConstructor
 public class HomeController {
+
+    private OrderRepository orderRepository;
+    private ConsultationRepository consultationRepository;
     @GetMapping
     public String getHomePage(Model model){
         model.addAttribute("request",new RequestConsultationDTO());
@@ -29,8 +38,10 @@ public class HomeController {
             return "redirect:/";
         }
         else {
-            System.out.println(requestConsultationDTO.getPhoneNumber());
-            System.out.println(requestConsultationDTO.getMessage());
+            Consultation consultation = new Consultation();
+            consultation.setPhoneNumber(requestConsultationDTO.getPhoneNumber());
+            consultation.setMessage(requestConsultationDTO.getMessage());
+            consultationRepository.save(consultation);
             return "redirect:/";
         }
 
@@ -43,12 +54,15 @@ public class HomeController {
             return "redirect:/";
         }
         else {
-            System.out.println(orderDTO.getFirstName());
-            System.out.println(orderDTO.getLastName());
-            System.out.println(orderDTO.getPhoneNumber());
-            System.out.println(orderDTO.getEmail());
-            System.out.println(orderDTO.getServerType().name());
-            System.out.println(orderDTO.getMessage());
+            Order order = new Order();
+            order.setFirstName(orderDTO.getFirstName());
+            order.setLastName(orderDTO.getLastName());
+            order.setPhoneNumber(orderDTO.getPhoneNumber());
+            order.setEmail(orderDTO.getEmail());
+            order.setServerType(orderDTO.getServerType().name());
+            order.setMessage(orderDTO.getMessage());
+            order.setStatus("ACTIVE");
+            orderRepository.save(order);
             return "redirect:/";
         }
 
