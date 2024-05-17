@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>GPTelegram</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css"
+          rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9"
+          crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css"
+          integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+
+    <style>
+        .bg-custom {
+            background-color: #68b9ed;
+        }
+
+
+    </style>
+</head>
+
+<body>
+<div class="container-fluid">
+    <div class="row flex-nowrap">
+        <!--Sidebar-->
+        <div class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark">
+            <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 bg-custom min-vh-100">
+                <a href="#" th:href="@{/admin}"
+                   class="d-flex align-items-center pb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+                    <span class="fs-5 fw-bold d-none d-sm-inline">GPTelegram</span>
+                </a>
+                <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start"
+                    id="menu">
+                    <li class="nav-item">
+                        <a href="#" th:href="@{/admin/consultations}"
+                           class="nav-link px-0 d-flex align-items-center justify-content-center text-dark">
+                            <i class="fs-3 bi-person-circle"></i> <span class="ms-1 d-none d-sm-inline">Consultations</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/admin/orders}" class="nav-link px-0 d-flex align-items-center justify-content-center text-dark">
+                            <i class="fs-3 bi-table"></i> <span class="ms-1 d-none d-sm-inline">Orders</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/admin/send-message}"
+                           class="nav-link px-0 d-flex align-items-center justify-content-center text-dark">
+                            <i class="fs-3 bi-people-fill"></i> <span class="ms-1 d-none d-sm-inline">Send Message</span> </a>
+                    </li>
+
+                </ul>
+                <hr>
+                <div class="pb-4">
+                    <a href="#" th:href="@{/login(logout)}"
+                       class="nav-link px-0 d-flex align-items-center justify-content-center text-dark">
+                        <i class="fs-4 bi-door-open-fill"></i> <span class="ms-1 d-none d-sm-inline">Log out</span> </a>
+                </div>
+            </div>
+        </div>
+        <div class="col py-3">
+            <h3>Consultations List</h3>
+            <div class="card">
+                <div class="card-body">
+                    <div th:fragment="orderList">
+
+                        <div class="col-md-12">
+                            <table id="ordersTable" class="table table-striped table-responsive-md">
+                                <thead>
+                                <th COLSPAN="3">
+                                    <form th:action="@{/admin/search-consultations}" method="get">
+                                        <div class="input-group mb-3 ">
+                                            <input type="text" class="form-control" name="searchValue" placeholder="Search..." th:value="${searchValue}"/>
+                                            <select class="form-select" name="searchField">
+                                                <option value="phone_number" th:selected="${searchField == 'phone_number'}">Phone Number</option>
+                                                <option value="message" th:selected="${searchField == 'message'}">Message</option>
+
+
+                                            </select>
+                                            <button class="btn btn-outline-secondary" type="submit">Search</button>
+                                        </div>
+                                    </form>
+                                </th>
+                                <tr>
+                                    <th>
+                                        Phone Number
+                                        <a class=""
+                                           th:href="@{/admin/consultations(sortField='phoneNumber', sortOrder='asc')}"
+                                           style="text-decoration: none;color:#68b9ed;">▲</a>
+                                        <a class="text-dark"
+                                           th:href="@{/admin/consultations(sortField='phoneNumber', sortOrder='desc')}"
+                                           style="text-decoration: none;">▼</a>
+                                    </th>
+                                    <th>
+                                        Message
+                                        <a class=""
+                                           th:href="@{/admin/consultations(sortField='message', sortOrder='asc')}"
+                                           style="text-decoration: none;color:#68b9ed;">▲</a>
+                                        <a class="text-dark"
+                                           th:href="@{/admin/consultations(sortField='message', sortOrder='desc')}"
+                                           style="text-decoration: none;">▼</a>
+                                    </th>
+
+
+
+                                    <th>Delete</th>
+                                </tr>
+
+
+                                </thead>
+                                <tbody>
+                                <div th:switch="${consultationsPage.content.size()}" class="container my-3">
+                                    <tr th:case="0">
+                                        <th COLSPAN="10">
+                                            <h2 CLASS=" d-flex align-items-center justify-content-center">No consultation requests</h2>
+                                        </th>
+                                    </tr>
+
+                                    <div th:case="*">
+                                        <tr th:each="consultation : ${consultationsPage.content}">
+                                            <td th:text="${consultation.phoneNumber}"></td>
+                                            <td th:text="${consultation.message != null ? consultation.message  : ' '}"></td>
+
+
+
+
+                                            <td><a th:href="@{/admin/consultations/delete/{id}(id=${consultation.id})}"
+                                                   class="btn btn-info"><i class="fas fa-user-times ml-2"
+                                                                           onclick="if(!(confirm('Are you sure?'))) return false"></i></a>
+                                            </td>
+                                        </tr>
+                                            <tr>
+                                                <td COLSPAN="10">
+                                                    <div th:if="${consultationsPage.totalPages > 1}"
+                                                         class="d-flex justify-content-center my-3">
+                                                        <ul class="pagination">
+                                                            <li class="page-item"
+                                                                th:classappend="${consultationsPage.first ? 'disabled' : ''}">
+                                                                <a class="page-link bg-info text-dark"
+                                                                   th:href="@{${searchValue} ? '/admin/search-consultations?page=' + ${(consultationsPage.number - 1)} +'&size=' + ${consultationsPage.size} + '&searchField=' + ${searchField} + '&searchValue=' + ${searchValue} : '/admin/consultations?page=' + ${(consultationsPage.number - 1)} +'&size=' + ${consultationsPage.size} + '&sortField=' + ${sortField} + '&sortOrder=' + ${sortOrder}}">&laquo;</a>
+                                                            </li>
+                                                            <li class="page-item"
+                                                                th:each="pageNumber : ${#numbers.sequence(0, consultationsPage.totalPages - 1)}">
+                                                                <a class="page-link bg-info text-dark"
+                                                                   th:href="@{${searchValue} ? '/admin/search-consultations?page=' + ${pageNumber} + '&size=' + ${consultationsPage.size} + '&searchField=' + ${searchField} + '&searchValue=' + ${searchValue} : '/admin/consultations?page=' + ${pageNumber} + '&size=' + ${consultationsPage.size} + '&sortField=' + ${sortField} + '&sortOrder=' + ${sortOrder}}"
+                                                                   th:classappend="${consultationsPage.number == pageNumber ? 'active border border-dark' : ''}"
+                                                                   th:text="${pageNumber + 1}"></a>
+                                                            </li>
+                                                            <li class="page-item"
+                                                                th:classappend="${consultationsPage.last ? 'disabled' : ''}">
+                                                                <a class="page-link bg-info text-dark"
+                                                                   th:href="@{${searchValue} ? '/admin/search-consultations?page=' + ${(consultationsPage.number + 1)} + '&size=' + ${consultationsPage.size} + '&searchField=' + ${searchField} + '&searchValue=' + ${searchValue} : '/admin/consultations?page=' + ${(consultationsPage.number + 1)} + '&size=' +${consultationsPage.size} + '&sortField=' + ${sortField} + '&sortOrder=' + ${sortOrder}}">&raquo;</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+
+
+                                                </td>
+                                            </tr>
+
+                                    </div>
+                                </div>
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+</body>
+
+</html>
