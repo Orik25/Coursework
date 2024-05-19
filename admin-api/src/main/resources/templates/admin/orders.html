@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>GPTelegram</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css"
+        rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9"
+        crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css"
+        integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+
+  <style>
+        .bg-custom {
+            background-color: #68b9ed;
+        }
+        .modal {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            display: none;
+            z-index: 1;
+
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .custom-modal-content {
+            display: flex;
+            align-items: center;
+        }
+        .modal-header {
+            background-color: #68b9ed;
+            color: black;
+            padding: 15px;
+        }
+
+        .modal-title {
+            margin: 0;
+        }
+        .btn-custom-color-form {
+            background-color: #68b9ed;
+            color: #fff;
+            width: 120px;
+            height: 37px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+        }
+
+        .btn-custom-color-form:hover {
+            background-color: #4682b4;
+        }
+
+        .btn-custom-color-form-delete{
+            background-color: red;
+            color: #fff;
+            width: 90px;
+            height: 37px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+        }
+
+    </style>
+</head>
+
+<body>
+<div class="container-fluid">
+  <div class="row flex-nowrap">
+    <!--Sidebar-->
+    <div class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark">
+      <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 bg-custom min-vh-100">
+        <a href="#" th:href="@{/admin}"
+           class="d-flex align-items-center pb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+          <span class="fs-5 fw-bold d-none d-sm-inline">GPTelegram</span>
+        </a>
+        <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start"
+            id="menu">
+          <li class="nav-item">
+            <a href="#" th:href="@{/admin/consultations}"
+               class="nav-link px-0 d-flex align-items-center justify-content-center text-dark">
+              <i class="fs-3 bi-person-circle"></i> <span class="ms-1 d-none d-sm-inline">Consultations</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a th:href="@{/admin/orders}" class="nav-link px-0 d-flex align-items-center justify-content-center text-dark">
+              <i class="fs-3 bi-table"></i> <span class="ms-1 d-none d-sm-inline">Orders</span></a>
+          </li>
+          <li class="nav-item">
+            <a th:href="@{/admin/send-message}"
+               class="nav-link px-0 d-flex align-items-center justify-content-center text-dark">
+              <i class="fs-3 bi-people-fill"></i> <span class="ms-1 d-none d-sm-inline">Send Message</span> </a>
+          </li>
+
+        </ul>
+        <hr>
+        <div class="pb-4">
+          <a href="#" th:href="@{/login(logout)}"
+             class="nav-link px-0 d-flex align-items-center justify-content-center text-dark">
+            <i class="fs-4 bi-door-open-fill"></i> <span class="ms-1 d-none d-sm-inline">Log out</span> </a>
+        </div>
+      </div>
+    </div>
+    <div class="col py-3">
+      <h3>Orders List</h3>
+      <div class="card">
+        <div class="card-body">
+          <div th:fragment="orderList">
+
+            <div class="col-md-12">
+              <table id="ordersTable" class="table table-striped table-responsive-md">
+                <thead>
+                <th COLSPAN="7">
+                  <form th:action="@{/admin/search-orders}" method="get">
+                    <div class="input-group mb-3 ">
+                      <input type="text" class="form-control" name="searchValue" placeholder="Search..." th:value="${searchValue}"/>
+                      <select class="form-select" name="searchField">
+                        <option value="user" th:selected="${searchField == 'user'}">User</option>
+                        <option value="phone_number" th:selected="${searchField == 'phone_number'}">Phone Number</option>
+                        <option value="email" th:selected="${searchField == 'email'}">Email</option>
+                        <option value="server_type" th:selected="${searchField == 'server_type'}">Server Type</option>
+                        <option value="status" th:selected="${searchField == 'status'}">Status</option>
+                        <option value="message" th:selected="${searchField == 'message'}">Message</option>
+
+
+                      </select>
+                      <button class="btn btn-outline-secondary" type="submit">Search</button>
+                    </div>
+                  </form>
+                </th>
+                <tr>
+                  <th>
+                    Person
+                    <a class=""
+                       th:href="@{/admin/orders(sortField='firstName-lastName', sortOrder='asc')}"
+                       style="text-decoration: none;color:#68b9ed;">▲</a>
+                    <a class="text-dark"
+                       th:href="@{/admin/orders(sortField='firstName-lastName', sortOrder='desc')}"
+                       style="text-decoration: none;">▼</a>
+                  </th>
+                  <th>
+                    Phone Number
+                    <a class=""
+                       th:href="@{/admin/orders(sortField='phoneNumber', sortOrder='asc')}"
+                       style="text-decoration: none;color:#68b9ed;">▲</a>
+                    <a class="text-dark"
+                       th:href="@{/admin/orders(sortField='phoneNumber', sortOrder='desc')}"
+                       style="text-decoration: none;">▼</a>
+                  </th>
+                  <th>
+                    Email
+                    <a class=""
+                       th:href="@{/admin/orders(sortField='email', sortOrder='asc')}"
+                       style="text-decoration: none;color:#68b9ed;">▲</a>
+                    <a class="text-dark"
+                       th:href="@{/admin/orders(sortField='email', sortOrder='desc')}"
+                       style="text-decoration: none;">▼</a>
+                  </th>
+                  <th>
+                    Message
+                    <a class=""
+                       th:href="@{/admin/orders(sortField='message', sortOrder='asc')}"
+                       style="text-decoration: none;color:#68b9ed;">▲</a>
+                    <a class="text-dark"
+                       th:href="@{/admin/orders(sortField='message', sortOrder='desc')}"
+                       style="text-decoration: none;">▼</a>
+                  </th>
+                  <th>
+                    Server Type
+                    <a class=""
+                       th:href="@{/admin/orders(sortField='serverType', sortOrder='asc')}"
+                       style="text-decoration: none;color:#68b9ed;">▲</a>
+                    <a class="text-dark"
+                       th:href="@{/admin/orders(sortField='serverType', sortOrder='desc')}"
+                       style="text-decoration: none;">▼</a>
+                  </th>
+                  <th>
+                    Status
+                    <a class=""
+                       th:href="@{/admin/orders(sortField='status', sortOrder='asc')}"
+                       style="text-decoration: none;color:#68b9ed;">▲</a>
+                    <a class="text-dark"
+                       th:href="@{/admin/orders(sortField='status', sortOrder='desc')}"
+                       style="text-decoration: none;">▼</a>
+                  </th>
+
+
+
+                  <th>Edit</th>
+                </tr>
+
+
+                </thead>
+                <tbody>
+                <div th:switch="${ordersPage.content.size()}" class="container my-3">
+                  <tr th:case="0">
+                    <th COLSPAN="10">
+                      <h2 CLASS=" d-flex align-items-center justify-content-center">No consultation requests</h2>
+                    </th>
+                  </tr>
+
+                  <div th:case="*">
+                    <tr th:each="order : ${ordersPage.content}">
+                      <td th:text="${order.firstName + ' ' + order.lastName}"></td>
+                      <td th:text="${order.phoneNumber}"></td>
+                      <td th:text="${order.email}"></td>
+                      <td th:text="${order.message != null ? order.message  : ' '}"></td>
+                      <td th:text="${order.serverType}"></td>
+                      <td th:text="${order.status}"></td>
+
+
+
+
+                      <td>
+                        <a class="btn btn-info">
+                          <i class="bi bi-pencil-square ml-5" th:onclick="'javascript:openModalUpdate(' + ${order.id} + ')'"></i>
+                        </a>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td COLSPAN="7">
+                        <div th:if="${ordersPage.totalPages > 1}"
+                             class="d-flex justify-content-center my-3">
+                          <ul class="pagination">
+                            <li class="page-item"
+                                th:classappend="${ordersPage.first ? 'disabled' : ''}">
+                              <a class="page-link bg-info text-dark"
+                                 th:href="@{${searchValue} ? '/admin/search-orders?page=' + ${(ordersPage.number - 1)} +'&size=' + ${ordersPage.size} + '&searchField=' + ${searchField} + '&searchValue=' + ${searchValue} : '/admin/orders?page=' + ${(ordersPage.number - 1)} +'&size=' + ${ordersPage.size} + '&sortField=' + ${sortField} + '&sortOrder=' + ${sortOrder}}">&laquo;</a>
+                            </li>
+                            <li class="page-item"
+                                th:each="pageNumber : ${#numbers.sequence(0, ordersPage.totalPages - 1)}">
+                              <a class="page-link bg-info text-dark"
+                                 th:href="@{${searchValue} ? '/admin/search-orders?page=' + ${pageNumber} + '&size=' + ${ordersPage.size} + '&searchField=' + ${searchField} + '&searchValue=' + ${searchValue} : '/admin/orders?page=' + ${pageNumber} + '&size=' + ${ordersPage.size} + '&sortField=' + ${sortField} + '&sortOrder=' + ${sortOrder}}"
+                                 th:classappend="${ordersPage.number == pageNumber ? 'active border border-dark' : ''}"
+                                 th:text="${pageNumber + 1}"></a>
+                            </li>
+                            <li class="page-item"
+                                th:classappend="${ordersPage.last ? 'disabled' : ''}">
+                              <a class="page-link bg-info text-dark"
+                                 th:href="@{${searchValue} ? '/admin/search-orders?page=' + ${(ordersPage.number + 1)} + '&size=' + ${ordersPage.size} + '&searchField=' + ${searchField} + '&searchValue=' + ${searchValue} : '/admin/orders?page=' + ${(ordersPage.number + 1)} + '&size=' +${ordersPage.size} + '&sortField=' + ${sortField} + '&sortOrder=' + ${sortOrder}}">&raquo;</a>
+                            </li>
+                          </ul>
+                        </div>
+
+
+                      </td>
+                    </tr>
+
+                  </div>
+                </div>
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+</div>
+<div id="modalUpdate" class="modal">
+  <div class="modal-dialog">
+    <div class="modal-content ">
+      <div class="modal-header">
+        <h5 class="modal-title">Update Form</h5>
+        <button class="btn-close" onclick="closeModalUpdate()"></button>
+      </div>
+      <div class="modal-body">
+          <form th:action="@{orders/update}" th:object="${orderUpdate}" method="post">
+            <div class="mb-3">
+              <input id="updateId" type="hidden" th:field="*{id}">
+              <label for="serverTypeSelect" class="form-label">Host Type</label>
+              <select name="serverType" th:field="*{serverType}" id="serverTypeSelect" class="form-select">
+                <option th:each="serverType : ${serverTypes}"
+                        th:value="${serverType}" th:text="${serverType}">
+                </option>
+              </select>
+
+              <label for="orderStatusSelect" class="form-label">Status</label>
+              <select name="serverType" th:field="*{statusType}" id="orderStatusSelect" class="form-select">
+                <option th:each="statusType : ${statusTypes}"
+                        th:value="${statusType}" th:text="${statusType}">
+                </option>
+              </select>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn-custom-color-form">Save</button>
+              <button type="button" class="btn-custom-color-form-delete" th:onclick="'javascript:deleteOrder()'">Delete</button>
+
+            </div>
+          </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script th:inline="javascript">
+    var modalUpdate = document.getElementById("modalUpdate");
+
+    function openModalUpdate(id) {
+       fetch('/orders/' + id)
+          .then(response => response.json())
+          .then(data => {
+              document.getElementById('updateId').value = data.id;
+              document.getElementById('serverTypeSelect').value = data.serverType;
+              document.getElementById('orderStatusSelect').value = data.status;
+          })
+          .catch(error => console.error('Error:', error));
+       modalUpdate.style.display = "block";
+    }
+
+
+
+    function closeModalUpdate() {
+        modalUpdate.style.display = "none";
+    }
+    function deleteOrder() {
+      var orderId = document.getElementById('updateId').value;
+      if (confirm("Are you sure you want to delete this order?")) {
+          fetch('/admin/orders/delete/' + orderId, {
+              method: 'GET',
+          })
+          .then(data => {
+              closeModalUpdate();
+              location.reload();
+          })
+          .catch(error => {
+              console.error('There has been a problem with your fetch operation:', error);
+          });
+      } else {
+          closeModalUpdate();
+      }
+    }
+
+</script>
+
+</body>
+
+</html>
