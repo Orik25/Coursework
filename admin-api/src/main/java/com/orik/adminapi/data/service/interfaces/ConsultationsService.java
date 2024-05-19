@@ -7,4 +7,5 @@ import org.springframework.data.domain.Pageable;
 public interface ConsultationsService {
     Page<Consultation> getAllConsultationsSorted(Integer page, Integer size, String sortField, String sortOrder);
     Page<Consultation> findByFieldContainingIgnoreCase(String fieldName, String searchValue, Pageable pageable);
+    void deleteById(Long id);
 }

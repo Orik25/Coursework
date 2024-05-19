@@ -31,4 +31,9 @@ public class ConsultationsServiceImpl implements ConsultationsService {
     public Page<Consultation> findByFieldContainingIgnoreCase(String fieldName, String searchValue, Pageable pageable) {
         return consultationRepository.findByFieldContainingIgnoreCase(fieldName, searchValue, pageable);
     }
+
+    @Override
+    public void deleteById(Long id) {
+        consultationRepository.deleteById(id);
+    }
 }

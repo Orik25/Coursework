@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -40,5 +41,11 @@ public class ConsultationController {
         model.addAttribute("searchValue", searchValue);
         model.addAttribute("consultationsPage", consultationsService.findByFieldContainingIgnoreCase(searchField,searchValue, pageable));
         return "admin/consultations";
+    }
+
+    @GetMapping("/consultations/delete/{id}")
+    public String delete(@PathVariable("id") Long id) {
+        consultationsService.deleteById(id);
+        return "redirect:/admin/consultations";
     }
 }
