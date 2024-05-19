@@ -15,6 +15,9 @@ public class Chat {
     @Id
     private Long chatId;
 
+    @Column(name = "bot_token")
+    private String botToken;
+
     @Override
     public String toString() {
         return "Chat{" +

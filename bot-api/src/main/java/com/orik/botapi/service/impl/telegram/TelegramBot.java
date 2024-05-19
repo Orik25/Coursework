@@ -262,7 +262,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void greeting(Long chatId, Long userId, String name, Integer replyToMessageId) {
-        chatRepository.save(new Chat(chatId));
+        chatRepository.save(new Chat(chatId, botConfig.getToken()));
         sendMessageInReply(chatId, userId, "Hi, " + name + ", nice to meet you", replyToMessageId);
     }
 
