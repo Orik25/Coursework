@@ -306,7 +306,7 @@
     var modalUpdate = document.getElementById("modalUpdate");
 
     function openModalUpdate(id) {
-       fetch('/orders/' + id)
+       fetch('/admin/orders/' + id)
           .then(response => response.json())
           .then(data => {
               document.getElementById('updateId').value = data.id;
