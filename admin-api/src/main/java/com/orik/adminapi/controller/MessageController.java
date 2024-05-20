@@ -48,14 +48,13 @@ public class MessageController {
                 }
                 byte[] bytes = file.getBytes();
                 messageSender.sendMessage(message.getMessage(),bytes);
-                System.out.println(Arrays.toString(bytes));
             } catch (IOException e) {
                 redirectAttributes.addFlashAttribute("errorMessage", "The file could not be downloaded");
                 return "redirect:/admin/send-message";
             }
+        }else{
+            messageSender.sendMessage(message.getMessage());
         }
-
-
 
         redirectAttributes.addFlashAttribute("successMessage", "Message successfully sent!");
         return "redirect:/admin/send-message";
